@@ -1,0 +1,1074 @@
+/* The window is a little larger than the paper so the shadow can render.
+   Keep these paddings in sync with NOTE_COLLAPSED_HEIGHT in electron/main.js
+   (8 top + 44 header + 16 bottom = 68). */
+.note-shell {
+  height: 100%;
+  padding: 8px 12px 16px;
+}
+
+.note {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: 3px 3px 5px 5px;
+  background-color: var(--paper);
+  background-image:
+    url('../assets/paper-noise.png'),
+    linear-gradient(172deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 45%, rgba(90, 70, 20, 0.04));
+  box-shadow:
+    0 0 0 0.5px rgba(80, 60, 10, 0.14),
+    0 1px 1.5px rgba(70, 52, 12, 0.16),
+    0 7px 12px -6px rgba(70, 52, 12, 0.34);
+  transition: background-color 0.3s ease;
+}
+
+/* The lifted bottom-right corner of a real sticky note. */
+.note::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  right: 8px;
+  bottom: 7px;
+  width: 46%;
+  height: 22px;
+  box-shadow: 0 9px 9px rgba(70, 52, 12, 0.26);
+  transform: rotate(3.5deg);
+}
+
+.note.is-collapsed::after {
+  height: 14px;
+  bottom: 5px;
+}
+
+/* ---------- header: the adhesive strip, which is also the drag handle */
+
+.note-header {
+  -webkit-app-region: drag;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 44px;
+  padding: 0 6px 0 10px;
+  border-radius: 3px 3px 0 0;
+  background: var(--band);
+  box-shadow: inset 0 -1px 0 rgba(80, 60, 10, 0.06);
+  transition: background-color 0.3s ease;
+}
+
+.note.is-collapsed .note-header {
+  border-radius: 3px 3px 5px 5px;
+  box-shadow: none;
+}
+
+/* The title input is stacked over an invisible copy of its text (::after,
+   same font and padding), so the box is always exactly as wide as the text,
+   placeholder included. The rest of the strip stays draggable. */
+.title-sizer {
+  -webkit-app-region: no-drag;
+  display: inline-grid;
+  flex: 0 1 auto;
+  min-width: 2.5em;
+  max-width: 100%;
+}
+
+.note-header:has(.ticker:not(:empty)) .title-sizer {
+  max-width: 55%;
+}
+
+.title-sizer::after,
+.note-title {
+  grid-area: 1 / 1;
+  padding: 0 7px 2px 4px; /* extra on the right for the handwriting's overhang */
+  font-family: var(--font-hand);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 32px;
+  letter-spacing: 0.005em;
+}
+
+.title-sizer::after {
+  content: attr(data-value) ' ';
+  visibility: hidden;
+  white-space: pre;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.note-title {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  text-overflow: ellipsis;
+  color: var(--ink);
+  outline: none;
+  transition: background-color 0.15s ease;
+}
+
+.note-title::placeholder {
+  color: var(--ink-soft); /* a default title, not a greyed-out field */
+}
+
+.note-title:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.note-title:focus {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.header-spacer {
+  flex: 1;
+  align-self: stretch;
+}
+
+.collapsed-count {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.collapsed-count.has-overdue {
+  background: rgba(176, 68, 59, 0.16);
+  color: var(--danger);
+}
+
+.note-controls {
+  -webkit-app-region: no-drag;
+  flex: none;
+  display: flex;
+  gap: 1px;
+  transition: opacity 0.2s ease;
+}
+
+.note:not(:hover):not(:focus-within) .note-controls {
+  opacity: 0.7;
+}
+
+/* While a collapsed note's palette is open the window is taller than the
+   strip; the strip itself keeps its height. */
+.note.is-collapsed {
+  height: 44px;
+}
+
+/* ---------- ticker: the rotating "what's next" line in the header */
+
+.ticker {
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 2px 0 2px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.ticker:not(:empty)::before {
+  content: '';
+  flex: none;
+  width: 1px;
+  height: 22px;
+  background: rgba(80, 60, 10, 0.2);
+}
+
+.ticker-window {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  overflow: hidden;
+}
+
+.ticker-line {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.ticker-stack {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.ticker-meta {
+  display: flex;
+  flex-wrap: wrap; /* whatever doesn't fit wraps onto a hidden second row, */
+  height: 1.2em; /* so the counter is shown whole or not at all */
+  column-gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.ticker-line.is-entering {
+  animation: ticker-in 0.42s var(--ease-out) both;
+}
+
+.ticker-line.is-leaving {
+  animation: ticker-out 0.42s ease both;
+}
+
+@keyframes ticker-in {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes ticker-out {
+  to {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+.ticker-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(39, 48, 74, 0.3);
+}
+
+.ticker-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ticker-due {
+  flex: none;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.status-soon .ticker-dot { background: var(--pen); }
+.status-soon .ticker-due { color: var(--pen); }
+.status-today .ticker-dot { background: #d18e0c; }
+.status-today .ticker-due { color: #7a5208; }
+.status-overdue .ticker-dot { background: var(--danger); animation: ticker-pulse 1.6s ease-in-out infinite; }
+.status-overdue .ticker-due { color: var(--danger); }
+
+@keyframes ticker-pulse {
+  50% {
+    box-shadow: 0 0 0 4px rgba(176, 68, 59, 0.18);
+  }
+}
+
+.ticker-count {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
+
+.ticker-done {
+  font-weight: 700;
+}
+
+/* ---------- washi tape marks the note for today */
+
+.tape {
+  position: absolute;
+  z-index: 3;
+  top: -6px;
+  left: 50%;
+  width: 76px;
+  height: 12px; /* only grips the top edge, clear of the header text */
+  transform: translateX(-50%) rotate(-1.5deg);
+  background-color: #faf6ec; /* opaque: it overhangs the note, onto the desktop */
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(53, 80, 168, 0.16) 0 5px,
+    transparent 5px 11px
+  );
+  clip-path: polygon(
+    2% 0, 98% 0, 100% 18%, 97.5% 36%, 100% 54%, 97.5% 72%, 100% 90%, 98% 100%,
+    2% 100%, 0 82%, 2.5% 64%, 0 46%, 2.5% 28%, 0 10%
+  );
+  pointer-events: none;
+}
+
+/* ---------- color palette */
+
+.palette {
+  -webkit-app-region: no-drag;
+  position: absolute;
+  z-index: 5;
+  top: 40px;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 9px;
+  border-radius: 8px;
+  background: #fffdf5;
+  box-shadow: 0 0 0 1px rgba(60, 45, 10, 0.08), 0 8px 18px -6px rgba(60, 45, 10, 0.35);
+  animation: pop-in 0.14s var(--ease-out);
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(6, 22px);
+  gap: 8px 7px;
+}
+
+.opacity-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.opacity-row input {
+  flex: 1;
+  min-width: 0;
+  width: 90px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--pen);
+  cursor: pointer;
+}
+
+.opacity-row output {
+  width: 4ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px rgba(60, 45, 10, 0.16);
+  transition: transform 0.12s ease;
+}
+
+.swatch:hover {
+  transform: translateY(-1px) rotate(-3deg);
+}
+
+.swatch[aria-checked='true'] {
+  box-shadow:
+    inset 0 0 0 1px rgba(60, 45, 10, 0.16),
+    0 0 0 2px #fffdf5,
+    0 0 0 3.5px var(--pen);
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+}
+
+/* ---------- day / month row */
+
+.period {
+  flex: none;
+  padding: 9px 12px 2px;
+}
+
+.period-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.mode-switch {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 999px;
+  background: rgba(80, 60, 10, 0.08);
+}
+
+.mode-switch button {
+  position: relative;
+  z-index: 1;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  transition: color 0.25s ease;
+}
+
+.mode-switch button[aria-checked='true'] {
+  color: var(--ink);
+}
+
+/* the white pill that rolls from one tab to the other */
+.mode-pill {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 0;
+  width: var(--pill-w, 0);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 1px 2px rgba(60, 45, 10, 0.14);
+  transform: translateX(var(--pill-x, 2px));
+}
+
+.mode-switch.is-placed .mode-pill {
+  transition: transform 0.32s cubic-bezier(0.3, 1.25, 0.5, 1), width 0.32s cubic-bezier(0.3, 1.25, 0.5, 1);
+}
+
+/* the date or month label changes with the tab: slide it in */
+.period-nav {
+  animation: nav-in 0.28s var(--ease-out) backwards;
+}
+
+@keyframes nav-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+}
+
+.period-nav {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.period-label {
+  min-width: 0;
+  padding: 3px 5px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink-soft);
+  transition: background-color 0.15s ease;
+}
+
+.period-label:hover {
+  background: rgba(80, 60, 10, 0.08);
+}
+
+.period-label strong {
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.tone-past .period-label,
+.tone-past .period-label strong {
+  color: #8e4a2c;
+}
+
+/* ---------- new task field */
+
+.task-input {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 10px 4px;
+  padding: 7px 10px 7px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.4);
+  box-shadow: inset 0 0 0 1px rgba(80, 60, 10, 0.07);
+  cursor: text;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.task-input:hover {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.task-input:focus-within {
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 0 0 1.5px rgba(53, 80, 168, 0.45);
+}
+
+.task-input input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  outline: none;
+  line-height: 20px;
+}
+
+.task-input input::placeholder {
+  color: var(--ink-faint);
+}
+
+/* The plus: a faint mark while the field is empty, a blue round button once there is something to add. */
+.task-input-add {
+  position: relative;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: text;
+  transition: background-color 0.2s ease, transform 0.22s var(--ease-spring), box-shadow 0.2s ease;
+}
+
+.task-input-add::before,
+.task-input-add::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  border-radius: 1px;
+  background: var(--ink-faint);
+  transition: background-color 0.2s ease, transform 0.22s var(--ease-spring);
+}
+
+.task-input-add::before {
+  width: 11px;
+  height: 1.6px;
+}
+
+.task-input-add::after {
+  width: 1.6px;
+  height: 11px;
+}
+
+.task-input.has-text .task-input-add {
+  background: var(--pen);
+  box-shadow: 0 1px 3px rgba(53, 80, 168, 0.4);
+  cursor: pointer;
+  transform: scale(1.08);
+}
+
+.task-input.has-text .task-input-add::before,
+.task-input.has-text .task-input-add::after {
+  background: #fff;
+}
+
+.task-input.has-text .task-input-add:hover {
+  background: #2c4594;
+}
+
+.task-input.has-text .task-input-add:active {
+  transform: scale(0.92);
+}
+
+/* ---------- task list */
+
+/* One scroll area holds the to-do list and the Completed section below it. */
+.task-scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 2px 4px 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.task-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.task-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.task-scroll::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 10px;
+  background: rgba(80, 60, 10, 0.2) padding-box;
+}
+
+.task {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+
+.task.is-new {
+  animation: task-in 0.3s var(--ease-out);
+}
+
+/* Leaving is opacity and transform only, so it runs on the compositor and never
+   forces layout; the rows underneath close the gap afterwards with a FLIP slide
+   (useFlip in Note.jsx). A finished task drifts right, a deleted one left. */
+.task.is-leaving {
+  opacity: 0;
+  transform: translateX(14px) scale(0.98);
+  pointer-events: none;
+  transition: opacity 0.18s ease-out, transform 0.2s cubic-bezier(0.4, 0, 1, 1);
+}
+
+.task.is-removing {
+  opacity: 0;
+  transform: translateX(-14px) scale(0.98);
+  pointer-events: none;
+  transition: opacity 0.14s ease-out, transform 0.17s cubic-bezier(0.4, 0, 1, 1);
+}
+
+@keyframes task-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.985);
+  }
+}
+
+/* the ring pops as the pen ticks it */
+.task.is-done:not(.is-history) .check svg {
+  animation: check-pop 0.36s var(--ease-spring);
+}
+
+@keyframes check-pop {
+  40% {
+    transform: scale(1.18);
+  }
+}
+
+/* the Completed count nudges when it changes */
+.history-count {
+  animation: count-bump 0.28s var(--ease-spring);
+}
+
+@keyframes count-bump {
+  from {
+    transform: scale(1.35);
+  }
+}
+
+.task-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 0;
+  padding: 6px 4px 6px 8px;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+}
+
+.task-row:hover {
+  background: rgba(80, 60, 10, 0.05);
+}
+
+/* checkbox: ring fills with pen ink, then the tick draws itself */
+.check {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.check svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+  overflow: visible;
+  transition: transform 0.18s cubic-bezier(0.3, 0.7, 0.3, 1.6);
+}
+
+.check:active svg {
+  transform: scale(0.84);
+}
+
+.check-ring {
+  fill: rgba(255, 255, 255, 0.4);
+  stroke: rgba(39, 48, 74, 0.45);
+  stroke-width: 1.5;
+  transition: fill 0.2s ease, stroke 0.2s ease;
+}
+
+.check:hover .check-ring {
+  fill: rgba(255, 255, 255, 0.75);
+  stroke: var(--pen);
+}
+
+.check-mark {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.22s ease;
+}
+
+.is-done .check-ring,
+.is-done .check:hover .check-ring {
+  fill: var(--pen);
+  stroke: var(--pen);
+}
+
+.is-done .check-mark {
+  stroke-dashoffset: 0;
+  transition-delay: 0.08s;
+}
+
+.task-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.task-text {
+  line-height: 20px;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  transition: color 0.35s ease 0.12s;
+}
+
+/* The strikethrough is a pen stroke drawn left to right. It lives on an
+   inline span so it follows the text across wrapped lines, one line after
+   another, and retracts the same way when unchecked. */
+.strike {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 8' preserveAspectRatio='none'%3E%3Cpath d='M1 5.1C18 3.7 36 5.5 55 4.3S86 3.5 99 4.6' fill='none' stroke='%233550a8' stroke-width='1.7' stroke-linecap='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 0 62%;
+  background-size: 0% 8px;
+  transition: background-size 0.4s cubic-bezier(0.55, 0.05, 0.3, 1);
+}
+
+.is-done .task-text {
+  color: var(--ink-faint);
+}
+
+.is-done .strike {
+  background-size: 100% 8px;
+}
+
+.task-edit {
+  width: calc(100% + 8px);
+  margin: -1px -4px;
+  padding: 1px 4px;
+  border: 0;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: inset 0 0 0 1.5px rgba(53, 80, 168, 0.45);
+  line-height: 20px;
+  outline: none;
+}
+
+.deadline {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(80, 60, 10, 0.08);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+  color: var(--ink-soft);
+  transition: filter 0.15s ease;
+}
+
+.deadline:hover {
+  filter: brightness(0.95);
+}
+
+.deadline {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Urgency runs neutral -> blue (next two days) -> amber (today) -> red (overdue). */
+.deadline-soon {
+  background: rgba(53, 80, 168, 0.13);
+  color: var(--pen);
+}
+
+.deadline-today {
+  background: rgba(214, 150, 20, 0.22);
+  color: #7a5208;
+}
+
+.deadline-overdue {
+  background: rgba(176, 68, 59, 0.15);
+  color: var(--danger);
+}
+
+.deadline-done {
+  opacity: 0.6;
+}
+
+/* inline deadline editor */
+.deadline-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  margin-top: 2px;
+  padding: 7px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(80, 60, 10, 0.08);
+  animation: pop-in 0.14s var(--ease-out);
+}
+
+.deadline-quick,
+.deadline-fields,
+.deadline-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.deadline-quick button {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(80, 60, 10, 0.08);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.deadline-quick button:hover {
+  background: rgba(80, 60, 10, 0.14);
+  color: var(--ink);
+}
+
+.deadline-quick button[aria-pressed='true'] {
+  background: var(--pen);
+  color: #fff;
+}
+
+.deadline-fields input {
+  flex: 1 1 96px;
+  min-width: 0;
+  height: 26px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: inset 0 0 0 1px rgba(80, 60, 10, 0.14);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.deadline-fields input[type='time'] {
+  flex: 0 1 88px;
+}
+
+.deadline-buttons {
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.overdue-tally {
+  font-weight: 700;
+  color: var(--danger);
+}
+
+.text-btn {
+  margin-right: 0;
+  font-size: 12px;
+}
+
+.text-btn.subtle {
+  color: var(--ink-soft);
+}
+
+.text-btn.subtle:hover {
+  background: rgba(80, 60, 10, 0.08);
+}
+
+.task-actions {
+  flex: none;
+  display: flex;
+  margin: -1px 0;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.task-row:hover .task-actions,
+.task-row:focus-within .task-actions {
+  opacity: 1;
+}
+
+.empty-state {
+  padding: 18px 12px;
+  font-family: var(--font-hand);
+  font-size: 20px;
+  text-align: center;
+  color: var(--ink-faint);
+}
+
+/* ---------- completed history */
+
+.history {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed rgba(80, 60, 10, 0.18);
+}
+
+.history-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 5px 8px 5px 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.history-toggle:hover {
+  background: rgba(80, 60, 10, 0.06);
+  color: var(--ink);
+}
+
+.history-toggle svg {
+  width: 14px;
+  height: 14px;
+}
+
+.history-count {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(80, 60, 10, 0.09);
+  font-size: 11px;
+  line-height: 17px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.history-list {
+  animation: task-in 0.2s var(--ease-out);
+}
+
+.done-label {
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--ink-faint);
+}
+
+/* ---------- footer + resize */
+
+.note-footer {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 30px;
+  padding: 2px 28px 8px 16px;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.tally {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+/* progress ring: completed out of total */
+.ring {
+  flex: none;
+  display: block;
+}
+
+.ring-track {
+  fill: none;
+  stroke: rgba(80, 60, 10, 0.14);
+  stroke-width: 3;
+}
+
+.ring-fill {
+  fill: none;
+  stroke: var(--pen);
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s var(--ease-out);
+}
+
+.text-btn {
+  padding: 2px 6px;
+  margin-right: -6px;
+  border-radius: 5px;
+  font-weight: 700;
+  color: var(--pen);
+}
+
+.text-btn:hover {
+  background: rgba(53, 80, 168, 0.1);
+}
+
+.resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  border-bottom-right-radius: 5px;
+  cursor: nwse-resize;
+  opacity: 0.55;
+  background: linear-gradient(
+    135deg,
+    transparent 0 52%,
+    rgba(39, 48, 74, 0.28) 52% 58%,
+    transparent 58% 68%,
+    rgba(39, 48, 74, 0.28) 68% 74%,
+    transparent 74%
+  );
+  transition: opacity 0.15s ease;
+}
+
+.resize-handle:hover {
+  opacity: 1;
+}
+
+/* ---------- motion: what appears when a note opens or expands */
+
+.note > .period,
+.note > .task-input,
+.note > .task-scroll,
+.note > .note-footer {
+  animation: fade-up 0.22s var(--ease-out) backwards;
+}
+
+.note > .task-input { animation-delay: 0.03s; }
+.note > .task-scroll { animation-delay: 0.06s; }
+.note > .note-footer { animation-delay: 0.09s; }
+
+.palette {
+  transform-origin: 90% 0;
+}
+
+.note-controls .icon-btn svg {
+  transition: transform 0.18s var(--ease-spring);
+}
+
+.note-controls .icon-btn:hover svg {
+  transform: scale(1.12);
+}

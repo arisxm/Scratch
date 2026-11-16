@@ -1,0 +1,16 @@
+name: Feature request
+description: An idea to make Scratch better.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe what you're trying to do and what gets in the way.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: How could Scratch help? Sketches or screenshots welcome.

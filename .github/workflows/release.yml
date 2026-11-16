@@ -1,0 +1,61 @@
+# Builds the Windows installer when a version tag (v1.5.0, ...) is pushed and
+# attaches it to a draft release. Review the draft, then publish it.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # needed to create the release
+
+jobs:
+  windows-installer:
+    runs-on: windows-latest
+    steps:
+      # A release made by hand on the website also creates its tag, which
+      # starts this workflow. Leave such a release alone.
+      - name: Skip if this tag already has a release
+        id: existing
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::notice::$GITHUB_REF_NAME already has a release; nothing to build."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.existing.outputs.skip != 'true'
+        uses: actions/checkout@v6
+      - if: steps.existing.outputs.skip != 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.existing.outputs.skip != 'true'
+        run: npm ci
+      - if: steps.existing.outputs.skip != 'true'
+        run: npm test
+      - name: Check the tag matches package.json
+        if: steps.existing.outputs.skip != 'true'
+        shell: bash
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $version" >&2
+            exit 1
+          fi
+      - if: steps.existing.outputs.skip != 'true'
+        run: npm run dist
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false" # not signed yet; see docs/RELEASING.md
+      - name: Create a draft release with the installer
+        if: steps.existing.outputs.skip != 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd release
+          sha256sum Scratch_Setup.exe > SHA256SUMS.txt
+          gh release create "$GITHUB_REF_NAME" Scratch_Setup.exe SHA256SUMS.txt \
+            --draft --title "Scratch ${GITHUB_REF_NAME#v}" --generate-notes

@@ -1,0 +1,41 @@
+name: Bug report
+description: Something in Scratch doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting! Please don't attach your notes file; describe what's in it instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, step by step, and what happened instead of what you expected?
+      placeholder: |
+        1. Collapse a note
+        2. Click the colour drop
+        3. The palette is cut off
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: Drag images here if it's about how something looks.
+  - type: input
+    id: scratch-version
+    attributes:
+      label: Scratch version
+      description: Menu › About Scratch
+      placeholder: "1.5.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: windows-version
+    attributes:
+      label: Windows version
+      options:
+        - Windows 11
+        - Windows 10
+        - Other / not sure
+    validations:
+      required: true

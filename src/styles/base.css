@@ -1,0 +1,213 @@
+:root {
+  /* Ink: text is a blue-black like a ballpoint, checks and strikes are blue pen. */
+  --ink: #27304a;
+  --ink-soft: rgba(39, 48, 74, 0.66);
+  --ink-faint: rgba(39, 48, 74, 0.4);
+  --pen: #3550a8;
+  --danger: #b0443b;
+
+  --font-hand: 'Caveat Variable', 'Segoe Print', 'Bradley Hand', cursive;
+  --font-ui: 'Figtree Variable', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.45, 0.5, 1);
+  color-scheme: light; /* paper stays paper in Windows dark mode */
+}
+
+/* Paper colors: --paper is the sheet, --band the darker adhesive strip. */
+.paper-yellow   { --paper: #fff3a6; --band: #fbe37c; }
+.paper-pink     { --paper: #ffdde6; --band: #fbc8d6; }
+.paper-lavender { --paper: #e8e0ff; --band: #d8cbfb; }
+.paper-mint     { --paper: #d5f3e0; --band: #bde9cd; }
+.paper-sky      { --paper: #d4eafc; --band: #bcdcf8; }
+.paper-peach    { --paper: #ffe3c9; --band: #fdd0a9; }
+.paper-coral    { --paper: #ffd6cf; --band: #fabcb2; }
+.paper-lime     { --paper: #eaf6bd; --band: #d9ec99; }
+.paper-aqua     { --paper: #cdf1ee; --band: #b0e5e1; }
+.paper-orchid   { --paper: #f6d9f1; --band: #ecc0e4; }
+.paper-sand     { --paper: #f1e8d4; --band: #e3d7b8; }
+.paper-stone    { --paper: #e5e8ee; --band: #d2d7e1; }
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 500; /* medium: easier to read on pastel paper than regular */
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  cursor: default;
+}
+
+input {
+  font: inherit;
+  color: inherit;
+  user-select: text;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--pen);
+  outline-offset: 1px;
+  border-radius: 5px;
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  color: var(--ink-soft);
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.12s ease;
+}
+
+.icon-btn:hover {
+  background: rgba(39, 48, 74, 0.08);
+  color: var(--ink);
+}
+
+.icon-btn:active {
+  background: rgba(39, 48, 74, 0.14);
+}
+
+.icon-btn.small {
+  width: 22px;
+  height: 22px;
+}
+
+.icon-btn.small svg {
+  width: 14px;
+  height: 14px;
+}
+
+.icon-btn.danger:hover {
+  color: var(--danger);
+  background: rgba(176, 68, 59, 0.1);
+}
+
+/* Native date/month pickers open from these; they are never seen. */
+.date-anchor {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.visually-hidden-input {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.outside-app {
+  margin: 24px;
+  padding: 16px;
+  max-width: 40ch;
+  background: #fff3a6;
+  border-radius: 4px;
+  line-height: 1.5;
+}
+
+/* ---------- motion: quick and soft, never in the way.
+   Windows ease in (and utility windows ease out); things that appear inside
+   them fade up in a short sequence. Only transform and opacity are animated.
+   Turned off by Settings > Animations, and by Windows' own reduce-motion. */
+
+@keyframes window-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+}
+
+/* A button dips and springs back when pressed, however briefly it is held. */
+@keyframes press {
+  40% {
+    transform: scale(0.92);
+  }
+}
+
+@keyframes window-out {
+  to {
+    opacity: 0;
+    transform: translateY(5px) scale(0.98);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+}
+
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+}
+
+/* 'backwards' only: once finished the element carries no animation, so no
+   stacking context is left behind to disturb the note's lifted-corner shadow. */
+.note-shell,
+.panel-shell,
+.launcher-shell {
+  transform-origin: 50% 100%;
+  animation: window-in 0.34s cubic-bezier(0.16, 1, 0.3, 1) 0.03s backwards;
+}
+
+:where(.icon-btn, .btn, .text-btn, .chip, .auto-chip, .segmented button, .mode-switch button, .launcher-btn, .pad, .history-toggle, .deadline, .swatch, .swatch-dot, .check):active:not(:disabled) {
+  animation: press 0.24s var(--ease-out);
+}
+
+.is-closing .panel-shell {
+  animation: window-out 0.13s ease-in forwards;
+}
+
+html[data-motion='off'] *,
+html[data-motion='off'] *::before,
+html[data-motion='off'] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,149 @@
+/* Window is 116 x 144 (LAUNCHER_SIZE in electron/main.js). */
+.launcher-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  height: 100%;
+  padding: 8px 12px 14px;
+}
+
+/* The pill-shaped grip sits on top of any wallpaper, so it carries its own
+   light background rather than relying on what's behind the window. */
+.launcher-grip {
+  -webkit-app-region: drag;
+  width: 38px;
+  height: 14px;
+  border-radius: 7px;
+  background:
+    radial-gradient(circle, rgba(39, 48, 74, 0.45) 1.1px, transparent 1.5px) 3px 0 / 8px 14px repeat-x,
+    rgba(255, 252, 240, 0.88);
+  box-shadow: 0 1px 3px rgba(40, 30, 0, 0.25);
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+}
+
+.launcher-shell:hover .launcher-grip {
+  opacity: 1;
+}
+
+.pad {
+  position: relative;
+  flex: none;
+  width: 58px;
+  height: 58px;
+  border-radius: 4px;
+}
+
+.pad-sheet {
+  position: absolute;
+  inset: 0;
+  border-radius: 3px 3px 4px 4px;
+  box-shadow: 0 0 0 0.5px rgba(80, 60, 10, 0.14), 0 1px 2px rgba(70, 52, 12, 0.18);
+}
+
+.pad-sheet-3 {
+  background: #d4eafc;
+  transform: translate(3px, 3px) rotate(7deg);
+}
+
+.pad-sheet-2 {
+  background: #ffdde6;
+  transform: translate(-2px, 2px) rotate(-5deg);
+}
+
+.pad-top {
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(#fbe37c, #fbe37c) top / 100% 11px no-repeat,
+    #fff3a6;
+  box-shadow:
+    0 0 0 0.5px rgba(80, 60, 10, 0.14),
+    0 1px 1.5px rgba(70, 52, 12, 0.18),
+    0 7px 12px -6px rgba(70, 52, 12, 0.4);
+  transform-origin: 20% 0;
+  transition: transform 0.22s cubic-bezier(0.3, 0.7, 0.3, 1.5);
+}
+
+/* Hovering lifts the top sheet as if it's about to be peeled off. */
+.pad:hover .pad-top {
+  transform: translateY(-2px) rotate(-3deg);
+}
+
+.pad:active .pad-top {
+  transform: translateY(0) scale(0.95);
+  transition-duration: 0.08s;
+}
+
+.pad-plus {
+  width: 22px;
+  height: 22px;
+  margin-top: 8px;
+  background:
+    linear-gradient(var(--pen), var(--pen)) center / 20px 2.5px no-repeat,
+    linear-gradient(var(--pen), var(--pen)) center / 2.5px 20px no-repeat;
+  border-radius: 2px;
+}
+
+.pad:focus-visible {
+  outline-offset: 5px;
+}
+
+.launcher-row {
+  display: flex;
+  gap: 3px;
+}
+
+.launcher-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 252, 240, 0.92);
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(40, 30, 0, 0.25);
+  opacity: 0.75;
+  transition: opacity 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+}
+
+.launcher-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.launcher-shell:hover .launcher-btn,
+.launcher-btn:focus-visible {
+  opacity: 1;
+}
+
+.launcher-btn:hover {
+  background: #fff;
+  transform: translateY(-1px);
+}
+
+/* how many notes are hidden */
+.launcher-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 7px;
+  background: var(--pen);
+  font-size: 9.5px;
+  font-weight: 800;
+  line-height: 14px;
+  text-align: center;
+  color: #fff;
+  animation: pop-in-badge 0.3s var(--ease-spring) backwards;
+}
+
+@keyframes pop-in-badge {
+  from {
+    transform: scale(0);
+  }
+}
