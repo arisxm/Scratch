@@ -15,7 +15,8 @@
     "start": "vite build && electron .",
     "test": "node --test \"tests/*.test.js\"",
     "dist": "vite build && electron-builder --win nsis --x64 --publish never",
-    "dist:portable": "vite build && electron-builder --win portable --x64 --publish never"
+    "dist:portable": "vite build && electron-builder --win portable --x64 --publish never",
+    "dist:mac": "vite build && electron-builder --mac dmg --universal --publish never"
   },
   "devDependencies": {
     "@fontsource-variable/caveat": "5.3.0",
@@ -68,6 +69,19 @@
       "uninstallerSidebar": "build/uninstallerSidebar.bmp",
       "runAfterFinish": true,
       "deleteAppDataOnUninstall": false
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "icon": "build/icon-mac.png",
+      "category": "public.app-category.productivity",
+      "identity": "-",
+      "hardenedRuntime": false
+    },
+    "dmg": {
+      "artifactName": "Scratch.${ext}",
+      "title": "Scratch"
     },
     "copyright": "Copyright © 2026 Arian, Sadif & Shibly",
     "electronFuses": {

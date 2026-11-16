@@ -1,4 +1,4 @@
-# Builds the Windows installer when a version tag (v1.5.0, ...) is pushed and
+# Builds the Windows and macOS installers when a version tag (v1.5.0, ...) is pushed and
 # attaches it to a draft release. Review the draft, then publish it.
 name: Release
 
@@ -12,6 +12,8 @@ permissions:
 jobs:
   windows-installer:
     runs-on: windows-latest
+    outputs:
+      skip: ${{ steps.existing.outputs.skip }}
     steps:
       # A release made by hand on the website also creates its tag, which
       # starts this workflow. Leave such a release alone.
@@ -59,3 +61,27 @@ jobs:
           sha256sum Scratch_Setup.exe > SHA256SUMS.txt
           gh release create "$GITHUB_REF_NAME" Scratch_Setup.exe SHA256SUMS.txt \
             --draft --title "Scratch ${GITHUB_REF_NAME#v}" --generate-notes
+
+  # Runs after the Windows job so the draft release already exists.
+  mac-installer:
+    needs: windows-installer
+    if: needs.windows-installer.outputs.skip != 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run dist:mac
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false" # ad-hoc signed only; see docs/RELEASING.md
+      - name: Add the disk image to the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd release
+          gh release download "$GITHUB_REF_NAME" --pattern SHA256SUMS.txt
+          shasum -a 256 Scratch.dmg >> SHA256SUMS.txt
+          gh release upload "$GITHUB_REF_NAME" Scratch.dmg SHA256SUMS.txt --clobber

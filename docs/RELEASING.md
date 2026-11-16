@@ -52,6 +52,16 @@ The automated tests can't cover these, so check them once on a real Windows 10/1
 7. Uninstall from Settings: the app, both shortcuts and the Task Manager startup entry are gone; `%APPDATA%\Scratch` is still there.
 
 
+## macOS
+
+`npm run dist:mac` writes `release/Scratch.dmg`, a universal (Intel + Apple silicon) app in a drag-to-Applications disk image. It only builds on a Mac; the release workflow does it on a `macos-latest` runner after the Windows job and adds the dmg (and its checksum) to the same draft release.
+
+`build/icon-mac.png` is `build/icon.png` scaled up to 512×512, the minimum macOS accepts. Replace it with a sharp 1024×1024 export when there is one.
+
+The app is ad-hoc signed only (`mac.identity: "-"`), which Apple silicon needs to run it at all. It is not signed with a Developer ID or notarized, so Gatekeeper blocks the first launch until the user clicks **Open Anyway** in System Settings › Privacy & Security (the README says so). Notarizing needs a paid Apple Developer account: set `CSC_LINK`/`CSC_KEY_PASSWORD` to the Developer ID certificate and `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD` and `APPLE_TEAM_ID` as workflow secrets, remove `mac.identity`, `mac.hardenedRuntime` and `CSC_IDENTITY_AUTO_DISCOVERY`, and add `"notarize": true` under `mac`. (Hardened runtime is off only because ad-hoc signing with it on makes the app fail to launch.)
+
+"Open when I sign in" is Windows-only (`electron/startup.js`); on a Mac, users add Scratch under System Settings › General › Login Items.
+
 ## What has been verified, and where
 
 Last full run, for 1.5.0 (2026-11-15), on Windows 10 with Electron 44:

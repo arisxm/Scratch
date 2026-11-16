@@ -7,13 +7,17 @@
 <p align="center">Sticky-note to-do lists that stay on top of your other windows.<br>
 A free, open-source Windows desktop app, developed by Arian, Sadif and Shibly.</p>
 
-Scratch puts small paper notes on your desktop that float above Chrome, VS Code and everything else, so your to-do list is always in view. Plan a day or a month, tick tasks off with a pen-stroke animation, set deadlines with countdowns and reminders, and collapse a note to keep cycling through what's next.
+<p align="center">
+  <img src="docs/screenshots/notes.png" alt="Three Scratch notes on a dark desktop: one being edited with a deadline picker, one collapsed with its rotating headline, and one showing an overdue task" width="720">
+</p>
+
+Scratch puts small paper notes on your desktop that float above Chrome, VS Code and everything else, so your to-do list is always in view. Plan a day or a month, tick tasks off with a pen-stroke animation, set deadlines with countdowns and reminders, and collapse a note to a single strip that keeps cycling through what's next.
 
 - **Daily lists and monthly goals**, with today's notes marked by a strip of tape
 - **Deadlines** with live countdowns, overdue warnings and Windows notifications
 - **Always on top**, movable anywhere, remembers where you put each note
 - **Twelve pastel colors** and adjustable transparency
-- **Pomodoro timer** (25 minutes on and 5 off by default, or any length you choose)
+- **Pomodoro timer** (25 minutes on and 5 off by default, or any length you choose), a manager for hidden notes, and a Settings window
 - **Starts with Windows** if you want it to; works offline; your notes never leave your PC
 
 ## Download
@@ -21,6 +25,10 @@ Scratch puts small paper notes on your desktop that float above Chrome, VS Code 
 Get **`Scratch_Setup.exe`** from the [latest release](../../releases/latest). It installs for your Windows account only, with no administrator rights needed, and runs on Windows 10 and 11 (64-bit).
 
 The installer is not code-signed yet, so Windows SmartScreen may say "Windows protected your PC". Click **More info**, then **Run anyway**.
+
+On a **Mac**, get **`Scratch.dmg`** from the same release, open it and drag Scratch into Applications. It runs on Intel and Apple silicon Macs. The app isn't notarized by Apple yet, so the first time you open it macOS says it "could not verify" Scratch: click **Done**, then go to **System Settings › Privacy & Security**, scroll down and click **Open Anyway**.
+
+Updating from **Sticky Notes** (Scratch's earlier name)? Just run the new installer: it replaces Sticky Notes and brings your notes across.
 
 ## Using Scratch
 
@@ -44,6 +52,7 @@ Notes are saved automatically to `%APPDATA%\Scratch\sticky-notes.json` ("Open da
 
 **About:** "About Scratch" in the menu shows the version, the developers and the licence.
 
+
 ## Build from source
 
 You need [Node.js](https://nodejs.org) 20 or newer and Git.
@@ -55,6 +64,7 @@ npm install
 npm run dev        # run with live reload
 npm test           # unit tests
 npm run dist       # build release\Scratch_Setup.exe (on Windows)
+npm run dist:mac   # build release/Scratch.dmg (on a Mac only)
 ```
 
 Building the installer on Linux or macOS also needs [Wine](https://www.winehq.org/). Maintainer notes on releases, the installer and signing are in [docs/RELEASING.md](docs/RELEASING.md).
