@@ -2,6 +2,11 @@
 
 All notable changes to Scratch. Versions follow [semantic versioning](https://semver.org/).
 
+## [1.5.2] - 2026-11-16
+
+### Added
+- A macOS installer, `Scratch.dmg`, for Intel and Apple silicon Macs. Open it and drag Scratch into Applications.
+
 ## [1.5.1] - 2026-11-16
 
 ### Added
