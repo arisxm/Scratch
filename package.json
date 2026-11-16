@@ -1,0 +1,104 @@
+{
+  "name": "scratch",
+  "productName": "Scratch",
+  "version": "1.5.1",
+  "description": "Sticky-note to-do lists that stay on top of your other windows.",
+  "author": {
+    "name": "Arian, Sadif & Shibly"
+  },
+  "license": "MIT",
+  "private": true,
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k -n vite,electron -c yellow,cyan \"vite\" \"wait-on tcp:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
+    "build": "vite build",
+    "start": "vite build && electron .",
+    "test": "node --test \"tests/*.test.js\"",
+    "dist": "vite build && electron-builder --win nsis --x64 --publish never",
+    "dist:portable": "vite build && electron-builder --win portable --x64 --publish never"
+  },
+  "devDependencies": {
+    "@fontsource-variable/caveat": "5.3.0",
+    "@fontsource-variable/figtree": "5.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "concurrently": "10.0.6",
+    "cross-env": "10.1.0",
+    "electron": "44.9.3",
+    "electron-builder": "26.18.0",
+    "react": "19.2.9",
+    "react-dom": "19.2.9",
+    "vite": "8.3.5",
+    "wait-on": "9.5.1"
+  },
+  "build": {
+    "appId": "com.stickynotes.desktop",
+    "productName": "Scratch",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "!electron/smoke.js",
+      "package.json"
+    ],
+    "publish": null,
+    "compression": "maximum",
+    "electronLanguages": "en-US",
+    "afterPack": "build/afterPack.js",
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "packElevateHelper": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Scratch",
+      "uninstallDisplayName": "Scratch",
+      "artifactName": "Scratch_Setup.${ext}",
+      "include": "build/installer.nsh",
+      "installerSidebar": "build/installerSidebar.bmp",
+      "uninstallerSidebar": "build/uninstallerSidebar.bmp",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "copyright": "Copyright © 2026 Arian, Sadif & Shibly",
+    "electronFuses": {
+      "runAsNode": false,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false
+    },
+    "extraResources": [
+      {
+        "from": "licenses",
+        "to": "licenses"
+      },
+      {
+        "from": "LICENSE",
+        "to": "licenses/Scratch-MIT.txt"
+      },
+      {
+        "from": "THIRD_PARTY_NOTICES.md",
+        "to": "licenses/THIRD_PARTY_NOTICES.md"
+      }
+    ]
+  },
+  "contributors": [
+    {
+      "name": "Arian Samin Islam"
+    },
+    {
+      "name": "Samin Yeasar Khan"
+    },
+    {
+      "name": "Sk. MD. Rashid Assef Shibly"
+    }
+  ]
+}

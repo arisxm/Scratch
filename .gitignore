@@ -1,0 +1,23 @@
+# dependencies
+node_modules/
+
+# build output (installers go to GitHub Releases, not into the repository)
+dist/
+release/
+
+# logs and test output
+*.log
+npm-debug.log*
+
+# editors and operating systems
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# local environment files
+.env
+.env.*
