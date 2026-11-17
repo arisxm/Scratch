@@ -104,6 +104,7 @@ export default function Manager() {
             <ul className="manager-list">
               {items.map((item, index) => {
                 const isSelected = selected.has(item.id);
+                const isNotepad = item.kind === 'notepad';
                 const tasks = item.total ? `${item.done} of ${item.total} done` : 'No tasks';
                 return (
                   <li
@@ -111,7 +112,7 @@ export default function Manager() {
                     className={isSelected ? 'manager-row is-selected' : 'manager-row'}
                     style={{ '--i': Math.min(index, 8) }}
                     onClick={() => toggle(item.id)}
-                    title={item.preview.length ? `Still to do: ${item.preview.join(', ')}` : undefined}
+                    title={item.preview?.length ? `Still to do: ${item.preview.join(', ')}` : undefined}
                   >
                     <input
                       type="checkbox"
@@ -120,11 +121,11 @@ export default function Manager() {
                       onChange={() => toggle(item.id)}
                       onClick={(e) => e.stopPropagation()}
                     />
-                    <span className={`row-chip paper-${item.color}`} aria-hidden="true" />
+                    <span className={isNotepad ? 'row-chip is-notepad' : `row-chip paper-${item.color}`} aria-hidden="true" />
                     <span className="row-text">
                       <span className={item.untitled ? 'row-title is-untitled' : 'row-title'}>{item.label}</span>
                       <span className="row-meta">
-                        {item.mode === 'daily' ? 'Daily list' : 'Monthly goals'}, {tasks}
+                        {isNotepad ? `Notepad, ${item.paper} paper` : `${item.mode === 'daily' ? 'Daily list' : 'Monthly goals'}, ${tasks}`}
                         {item.hiddenAt ? `, hidden ${timeAgo(item.hiddenAt)}` : ''}
                       </span>
                     </span>

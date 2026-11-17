@@ -1,0 +1,428 @@
+/* Notepad: a paint-style drawing pad on notepad paper (src/components/Notepad.jsx).
+   Unlike the other windows it is opaque and resizable, so it has no
+   transparent margin: the window edge is the pad's edge. */
+
+html[data-view='notepad'],
+html[data-view='notepad'] body {
+  background: #f3ecd8;
+}
+
+.np-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #f3ecd8;
+}
+
+.np-header {
+  -webkit-app-region: drag;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 44px;
+  padding: 0 6px 0 14px;
+  background: #fbe37c;
+  box-shadow: inset 0 -1px 0 rgba(80, 60, 10, 0.12);
+}
+
+.np-shell.is-fullscreen .np-header {
+  -webkit-app-region: no-drag;
+}
+
+.np-header h1 {
+  margin: 0 4px 2px 0;
+  font-family: var(--font-hand);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 32px;
+}
+
+.np-header .header-spacer {
+  flex: 1;
+}
+
+.np-status {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.np-group {
+  -webkit-app-region: no-drag;
+  display: flex;
+  gap: 2px;
+  padding-left: 6px;
+  border-left: 1px solid rgba(80, 60, 10, 0.14);
+}
+
+.np-group:first-of-type {
+  border-left: 0;
+}
+
+.np-btn {
+  -webkit-app-region: no-drag;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  color: var(--ink);
+  transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+.np-btn:hover:not(:disabled) {
+  background: rgba(39, 48, 74, 0.1);
+}
+
+.np-btn:active:not(:disabled) {
+  background: rgba(39, 48, 74, 0.16);
+}
+
+.np-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.np-btn.danger:hover {
+  color: var(--danger);
+  background: rgba(176, 68, 59, 0.12);
+}
+
+.np-close:hover {
+  color: #fff;
+  background: #c4473c !important;
+}
+
+/* ---------- tool bar */
+
+.np-toolbar {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  padding: 6px 10px;
+  background: #fff6c9;
+  box-shadow: inset 0 -1px 0 rgba(80, 60, 10, 0.12), 0 2px 6px -3px rgba(70, 52, 12, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.np-sep {
+  width: 1px;
+  height: 24px;
+  background: rgba(80, 60, 10, 0.14);
+}
+
+.np-tools {
+  display: flex;
+  gap: 2px;
+}
+
+.np-tool {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  color: var(--ink-soft);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.np-tool:hover {
+  background: rgba(39, 48, 74, 0.08);
+  color: var(--ink);
+}
+
+.np-tool.is-active {
+  background: var(--pen);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(30, 45, 100, 0.35);
+}
+
+.np-size {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.np-size-dot {
+  flex: none;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(39, 48, 74, 0.25);
+}
+
+.np-size input {
+  width: 96px;
+  accent-color: var(--pen);
+}
+
+.np-size-num {
+  min-width: 18px;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.np-chip {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(80, 60, 10, 0.07);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.np-chip.is-active {
+  background: var(--pen);
+  color: #fff;
+}
+
+.np-seg {
+  display: flex;
+  padding: 2px;
+  border-radius: 8px;
+  background: rgba(80, 60, 10, 0.07);
+}
+
+.np-seg button {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.np-seg button.is-active {
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(70, 52, 12, 0.25);
+}
+
+.np-colors {
+  display: grid;
+  grid-template-columns: repeat(9, 18px);
+  grid-auto-rows: 18px;
+  gap: 3px;
+}
+
+.np-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(39, 48, 74, 0.22);
+  transition: transform 0.12s ease;
+}
+
+.np-swatch:hover {
+  transform: scale(1.15);
+}
+
+.np-swatch.is-active {
+  box-shadow: 0 0 0 2px #fff6c9, 0 0 0 3.5px var(--pen);
+}
+
+.np-custom {
+  position: relative;
+  grid-row: span 2;
+  grid-column: 9;
+  align-self: center;
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+}
+
+.np-custom span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(39, 48, 74, 0.22);
+}
+
+.np-custom input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.np-select {
+  height: 28px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 7px;
+  background: rgba(80, 60, 10, 0.07);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+/* ---------- the page */
+
+.np-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: #e9e1c9;
+}
+
+.np-page {
+  position: relative;
+  touch-action: none;
+  cursor: crosshair;
+  box-shadow: 0 0 0 0.5px rgba(80, 60, 10, 0.16);
+}
+
+.np-page.tool-select {
+  cursor: default;
+}
+
+.np-page.tool-text {
+  cursor: text;
+}
+
+.np-page.tool-fill {
+  cursor: cell;
+}
+
+.np-page.tool-pen,
+.np-page.tool-marker,
+.np-page.tool-eraser {
+  cursor: none;
+}
+
+.np-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+/* the brush outline that follows the pointer */
+.np-cursor {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(39, 48, 74, 0.75);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7);
+  pointer-events: none;
+  min-width: 3px;
+  min-height: 3px;
+}
+
+.np-cursor.is-eraser {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* a pasted picture or a selection, before it is put down */
+.np-float {
+  position: absolute;
+  outline: 1.5px dashed var(--pen);
+  outline-offset: 0;
+  cursor: move;
+  touch-action: none;
+}
+
+.np-float canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.np-handle {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  background: #fff;
+  border: 1.5px solid var(--pen);
+}
+
+.h-nw { top: -6px; left: -6px; cursor: nwse-resize; }
+.h-ne { top: -6px; right: -6px; cursor: nesw-resize; }
+.h-sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
+.h-se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+
+.np-text {
+  position: absolute;
+  margin: 0;
+  padding: 2px 4px;
+  border: 1px dashed var(--pen);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.35);
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  white-space: pre;
+  user-select: text;
+  cursor: text;
+}
+
+/* ---------- the notepad's title, renamed in place like a sticky note's */
+
+.np-title-sizer {
+  -webkit-app-region: no-drag;
+  display: inline-grid;
+  flex: 0 1 auto;
+  min-width: 3em;
+  max-width: 40%;
+}
+
+.np-title-sizer::after,
+.np-title {
+  grid-area: 1 / 1;
+  padding: 0 7px 2px 4px;
+  font-family: var(--font-hand);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 32px;
+}
+
+.np-title-sizer::after {
+  content: attr(data-value) ' ';
+  visibility: hidden;
+  white-space: pre;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.np-title {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  text-overflow: ellipsis;
+  color: var(--ink);
+  outline: none;
+  transition: background-color 0.15s ease;
+}
+
+.np-title::placeholder {
+  color: var(--ink);
+  opacity: 1;
+}
+
+.np-title:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.np-title:focus {
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: inset 0 0 0 1.5px rgba(53, 80, 168, 0.45);
+}

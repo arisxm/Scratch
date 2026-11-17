@@ -98,7 +98,7 @@ async function run(ctx) {
       );
       check(
         'renderer has no Node access, only the sticky API',
-        isolation === JSON.stringify({ require: 'undefined', process: 'undefined', api: ['about', 'app', 'hidden', 'note', 'settings', 'timer'] }),
+        isolation === JSON.stringify({ require: 'undefined', process: 'undefined', api: ['about', 'app', 'hidden', 'note', 'notepad', 'settings', 'timer'] }),
         isolation,
       );
       check(

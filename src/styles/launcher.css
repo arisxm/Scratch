@@ -147,3 +147,127 @@
     transform: scale(0);
   }
 }
+
+/* ---------- "New" choices: hovering the pad splits the stack into two little
+   pads side by side, a sticky note and a notepad, each labelled underneath.
+   They sit where the pad is, so the launcher window keeps its size. */
+
+.pad-wrap {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 58px;
+}
+
+.pad-wrap .pad {
+  transition: opacity 0.18s ease, transform 0.25s var(--ease-spring);
+}
+
+.pad-wrap.is-open .pad {
+  opacity: 0;
+  transform: scale(0.7);
+  pointer-events: none;
+}
+
+.pad-choices {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pad-choice {
+  position: absolute;
+  top: 2px;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 3px;
+  color: var(--pen);
+  opacity: 0;
+  transform: scale(0.6);
+  transition: transform 0.28s var(--ease-spring), opacity 0.16s ease, box-shadow 0.15s ease;
+}
+
+.pad-choice svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pad-choice.is-note {
+  left: 23px;
+  background:
+    linear-gradient(#fbe37c, #fbe37c) top / 100% 9px no-repeat,
+    #fff3a6;
+  box-shadow: 0 0 0 0.5px rgba(80, 60, 10, 0.2), 0 3px 6px -2px rgba(40, 30, 0, 0.35);
+}
+
+.pad-choice.is-note svg {
+  margin-top: 6px;
+  stroke-width: 2.2;
+}
+
+/* a little lined page with a red margin */
+.pad-choice.is-notepad {
+  left: 27px;
+  background:
+    linear-gradient(90deg, transparent 18%, rgba(214, 86, 86, 0.7) 18%, rgba(214, 86, 86, 0.7) calc(18% + 1px), transparent calc(18% + 1px)),
+    repeating-linear-gradient(transparent 0 5px, rgba(86, 132, 196, 0.55) 5px 6px) 0 8px / 100% 100% no-repeat,
+    #fffdf5;
+  box-shadow: 0 0 0 0.5px rgba(80, 60, 10, 0.2), 0 3px 6px -2px rgba(40, 30, 0, 0.35);
+}
+
+.pad-choice.is-notepad svg {
+  margin: 4px 0 0 5px;
+  stroke-width: 1.7;
+}
+
+/* The labels sit on the desktop wallpaper, so they carry their own shadow. */
+.pad-choice-label {
+  position: absolute;
+  top: 45px;
+  left: -4px;
+  width: 50px;
+  font-size: 9.5px;
+  font-weight: 800;
+  line-height: 12px;
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6), 0 0 1px rgba(0, 0, 0, 0.6);
+}
+
+.pad-wrap.is-open .pad-choices {
+  pointer-events: auto;
+}
+
+.pad-wrap.is-open .pad-choice {
+  opacity: 1;
+}
+
+.pad-wrap.is-open .pad-choice.is-note {
+  transform: translateX(-23px);
+}
+
+.pad-wrap.is-open .pad-choice.is-notepad {
+  transform: translateX(23px);
+  transition-delay: 0.03s;
+}
+
+.pad-wrap.is-open .pad-choice:hover {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--pen), 0 5px 10px -2px rgba(40, 30, 0, 0.4);
+}
+
+.pad-wrap.is-open .pad-choice.is-note:hover {
+  transform: translateX(-23px) translateY(-2px);
+}
+
+.pad-wrap.is-open .pad-choice.is-notepad:hover {
+  transform: translateX(23px) translateY(-2px);
+}

@@ -2,6 +2,21 @@
 
 All notable changes to Scratch. Versions follow [semantic versioning](https://semver.org/).
 
+## [1.5.4] - 2026-11-17
+
+### Added
+- Hover over the + pad to choose **Sticky note** or **Notepad**. Clicking the pad itself still makes a sticky note.
+- As many notepads as you like (the menu item is now "New notepad"). Click a notepad's title to rename it; the name is also used when saving it as a picture.
+- Closing a notepad hides it instead of keeping one pad: it waits under Hidden notes with your notes, where it can be restored or deleted (with the same confirmation). The hidden count on the launcher includes notepads, and notepads that were open when Scratch quit open again at launch.
+
+### Changed
+- The notepad from 1.5.3 becomes your first notepad, under Hidden notes. Notepads are now kept in `notepads.json` and a `notepads` folder in the data folder.
+
+## [1.5.3] - 2026-11-17
+
+### Added
+- **Notepad** ("Notepad…" in the menu): a paint-style drawing pad on notepad paper (lined, grid, dotted or plain). Pen, highlighter, eraser, fill, colour picker, text, line, arrow, rectangle and ellipse tools, in any colour and size. Paste pictures with Ctrl+V, drop them in or insert them, then move and resize them. Select part of the drawing to move, copy, cut or delete it. Undo and redo, full screen (F11), and save the page as a PNG picture (Ctrl+S). The drawing is saved automatically.
+
 ## [1.5.2] - 2026-11-16
 
 ### Added
