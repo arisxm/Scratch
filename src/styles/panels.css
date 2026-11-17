@@ -812,3 +812,11 @@
 .set-actions .btn {
   padding: 0 12px;
 }
+
+/* a hidden notepad: a little lined page with a red margin */
+.row-chip.is-notepad {
+  background:
+    linear-gradient(90deg, transparent 5px, rgba(214, 86, 86, 0.7) 5px, rgba(214, 86, 86, 0.7) 6px, transparent 6px),
+    repeating-linear-gradient(transparent 0 4px, rgba(86, 132, 196, 0.55) 4px 5px),
+    #fffdf5;
+}

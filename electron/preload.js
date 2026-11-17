@@ -29,6 +29,8 @@ contextBridge.exposeInMainWorld('sticky', {
     openManager: () => ipcRenderer.send('app:open-manager'),
     openTimer: () => ipcRenderer.send('app:open-timer'),
     openSettings: () => ipcRenderer.send('app:open-settings'),
+    openNotepad: () => ipcRenderer.send('app:open-notepad'),
+    newNotepad: () => ipcRenderer.send('app:new-notepad'),
     hiddenCount: () => ipcRenderer.invoke('app:hidden-count'),
     onHiddenCount: (callback) => subscribe('launcher:hidden-count', callback),
     closeWindow: () => ipcRenderer.send('window:close'),
@@ -59,5 +61,19 @@ contextBridge.exposeInMainWorld('sticky', {
     command: (name) => ipcRenderer.send('timer:command', name),
     setLengths: (lengths) => ipcRenderer.send('timer:set-lengths', lengths),
     onChanged: (callback) => subscribe('timer:changed', callback),
+  },
+  // Notepad (drawing pad). Images travel as PNG bytes (Uint8Array).
+  notepad: {
+    load: () => ipcRenderer.invoke('notepad:load'),
+    save: (drawing) => ipcRenderer.invoke('notepad:save', drawing),
+    rename: (title) => ipcRenderer.send('notepad:rename', title),
+    exportPng: (png) => ipcRenderer.invoke('notepad:export', png),
+    copyPng: (png) => ipcRenderer.send('notepad:copy', png),
+    setFullScreen: (flag) => ipcRenderer.invoke('notepad:set-fullscreen', flag),
+    minimize: () => ipcRenderer.send('notepad:minimize'),
+    toggleMaximize: () => ipcRenderer.send('notepad:toggle-maximize'),
+    close: () => ipcRenderer.send('notepad:close'),
+    onFlush: (callback) => subscribe('notepad:flush', callback),
+    onFullScreen: (callback) => subscribe('notepad:fullscreen-changed', callback),
   },
 });

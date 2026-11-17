@@ -17,6 +17,8 @@ const {
   Menu,
   Notification,
   Tray,
+  clipboard,
+  ClipboardItem,
   dialog,
   nativeImage,
   screen,
@@ -30,6 +32,7 @@ const { createStartup } = require('./startup');
 const { migrateLegacyData } = require('./migrate');
 const about = require('./about');
 const { Pomodoro, DEFAULTS: POMODORO_DEFAULTS } = require('./pomodoro');
+const { NotepadStore, cleanPng } = require('./notepad');
 
 const DEV_URL = process.env.VITE_DEV_SERVER_URL || null;
 const PRELOAD = path.join(__dirname, 'preload.js');
@@ -52,6 +55,8 @@ const MANAGER_SIZE = { width: 404, height: 500 }; // hidden-notes manager
 const TIMER_SIZE = { width: 236, height: 416 }; // Pomodoro
 const SETTINGS_SIZE = { width: 372, height: 600 }; // Settings
 const ABOUT_SIZE = { width: 300, height: 392 }; // About Scratch
+const NOTEPAD_SIZE = { width: 960, height: 660 }; // Notepad (drawing pad), first open
+const NOTEPAD_MIN = { width: 600, height: 420 };
 const EDGE_GAP = 24;
 const CASCADE_STEP = 28;
 const REMINDER_CHECK_MS = 30_000;
@@ -68,6 +73,9 @@ let managerWin = null; // hidden-notes manager
 let aboutWin = null; // About Scratch
 let timerWin = null; // Pomodoro
 let settingsWin = null; // Settings
+const notepadWindows = new Map(); // notepadId -> BrowserWindow (Notepads: drawing pads)
+const senderNotepads = new Map(); // webContents.id -> notepadId
+let notepadStore = null;
 const noteWindows = new Map(); // noteId -> BrowserWindow
 const senderNotes = new Map(); // webContents.id -> noteId
 const senderRoles = new Map(); // webContents.id -> 'launcher' | 'manager' | 'timer'
@@ -328,7 +336,7 @@ function watchSessionEnd(win) {
 }
 
 function allWindows() {
-  return [launcherWin, managerWin, timerWin, aboutWin, settingsWin, ...noteWindows.values()].filter((w) => w && !w.isDestroyed());
+  return [launcherWin, managerWin, timerWin, aboutWin, settingsWin, ...notepadWindows.values(), ...noteWindows.values()].filter((w) => w && !w.isDestroyed());
 }
 
 // ----------------------------------------------------------- note windows ---
@@ -712,9 +720,9 @@ function hiddenSummary() {
 
 function broadcastHidden() {
   if (quitting || !store) return;
-  if (managerWin && !managerWin.isDestroyed()) managerWin.webContents.send('hidden:changed', hiddenSummary());
+  if (managerWin && !managerWin.isDestroyed()) managerWin.webContents.send('hidden:changed', hiddenItems());
   if (launcherWin && !launcherWin.isDestroyed()) {
-    launcherWin.webContents.send('launcher:hidden-count', store.data.notes.filter((n) => n.hidden).length);
+    launcherWin.webContents.send('launcher:hidden-count', hiddenCount());
   }
 }
 
@@ -807,6 +815,211 @@ function openSettings() {
       settingsWin = null;
     },
   });
+}
+
+// ---------------------------------------------------------------- notepads ---
+// Paint-style drawing pads on notepad paper. There can be many; like notes,
+// closing one hides it (it waits under Hidden notes). Unlike the other windows
+// they are opaque, so they can be resized natively, maximized and made full screen.
+
+function newNotepadBounds() {
+  const wa = screen.getPrimaryDisplay().workArea;
+  const size = { width: Math.min(sc(NOTEPAD_SIZE.width), wa.width), height: Math.min(sc(NOTEPAD_SIZE.height), wa.height) };
+  const open = notepadStore.pads.filter((p) => !p.hidden).length;
+  const at = centered(size);
+  const step = (open % 6) * CASCADE_STEP;
+  return clampToWorkArea({ x: at.x + step, y: at.y + step, ...size });
+}
+
+function newNotepad() {
+  const pad = notepadStore.create({ bounds: newNotepadBounds() });
+  openNotepadWindow(pad, { focus: true });
+  return pad;
+}
+
+function openNotepadWindow(pad, { focus = true } = {}) {
+  const existing = notepadWindows.get(pad.id);
+  if (existing && !existing.isDestroyed()) {
+    if (existing.isMinimized()) existing.restore();
+    if (focus) focusWindow(existing);
+    else existing.showInactive();
+    return existing;
+  }
+  const wa = screen.getPrimaryDisplay().workArea;
+  const bounds = clampToWorkArea(pad.bounds ?? newNotepadBounds());
+
+  const win = new BrowserWindow({
+    ...baseWindowOptions(bounds),
+    transparent: false,
+    backgroundColor: '#fffdf5',
+    hasShadow: true,
+    resizable: true,
+    maximizable: true,
+    minimizable: true,
+    fullscreenable: true,
+    skipTaskbar: false, // a big working window: findable on the taskbar when minimized
+    minWidth: Math.min(sc(NOTEPAD_MIN.width), wa.width),
+    minHeight: Math.min(sc(NOTEPAD_MIN.height), wa.height),
+    title: pad.title.trim() || 'Notepad',
+  });
+  const wcId = win.webContents.id;
+  notepadWindows.set(pad.id, win);
+  senderNotepads.set(wcId, pad.id);
+  senderRoles.set(wcId, 'notepad');
+  harden(win);
+  applyAlwaysOnTop(win);
+  watchSessionEnd(win);
+  win.once('ready-to-show', () => {
+    if (focus) {
+      win.show();
+      win.focus();
+    } else {
+      win.showInactive();
+    }
+  });
+
+  const rememberBounds = debounce(() => {
+    if (win.isDestroyed() || win.isFullScreen() || win.isMaximized() || win.isMinimized()) return;
+    pad.bounds = win.getBounds();
+    notepadStore.save();
+  }, 300);
+  win.on('move', rememberBounds);
+  win.on('resize', rememberBounds);
+
+  const sendFullScreen = () => !win.isDestroyed() && win.webContents.send('notepad:fullscreen-changed', win.isFullScreen());
+  win.on('enter-full-screen', sendFullScreen);
+  win.on('leave-full-screen', sendFullScreen);
+
+  // Closing asks the page to save its drawing first (it answers with
+  // notepad:close). If it doesn't answer in time, close anyway. A closed
+  // notepad is hidden, not deleted, just like a note.
+  win.on('close', (event) => {
+    if (quitting || win.__deleting) return;
+    if (!win.__flushed) {
+      event.preventDefault();
+      if (win.__closing) return;
+      win.__closing = true;
+      win.webContents.send('notepad:flush');
+      setTimeout(() => {
+        if (win.isDestroyed()) return;
+        win.__flushed = true;
+        win.close();
+      }, 3000);
+      return;
+    }
+    if (notepadStore.get(pad.id)) {
+      pad.hidden = true;
+      pad.hiddenAt = Date.now();
+      notepadStore.save();
+    }
+  });
+  win.on('closed', () => {
+    notepadWindows.delete(pad.id);
+    senderNotepads.delete(wcId);
+    senderRoles.delete(wcId);
+    broadcastHidden();
+  });
+
+  loadView(win, { view: 'notepad', id: pad.id });
+  return win;
+}
+
+function reopenNotepad(pad, { focus = true } = {}) {
+  pad.hidden = false;
+  pad.hiddenAt = null;
+  notepadStore.save();
+  openNotepadWindow(pad, { focus });
+  broadcastHidden();
+}
+
+function notepadLabel(pad) {
+  return pad.title.trim() || 'Untitled notepad';
+}
+
+/** Hidden notes and hidden notepads together, newest first, for the manager. */
+function hiddenItems() {
+  const pads = notepadStore.pads
+    .filter((p) => p.hidden)
+    .map((p) => ({
+      id: p.id,
+      kind: 'notepad',
+      label: notepadLabel(p),
+      untitled: !p.title.trim(),
+      paper: p.paper,
+      preview: [],
+      hiddenAt: p.hiddenAt,
+    }));
+  return [...hiddenSummary(), ...pads].sort((a, b) => (b.hiddenAt ?? 0) - (a.hiddenAt ?? 0));
+}
+
+const hiddenCount = () => store.data.notes.filter((n) => n.hidden).length + notepadStore.pads.filter((p) => p.hidden).length;
+
+function hiddenNotepadsByIds(ids) {
+  if (!Array.isArray(ids)) return [];
+  const wanted = new Set(ids.filter((id) => typeof id === 'string'));
+  return notepadStore.pads.filter((p) => p.hidden && wanted.has(p.id));
+}
+
+/**
+ * Delete hidden notes and notepads together, after one confirmation. Returns
+ * how many were deleted (0 if the user cancelled). Notes alone go through
+ * deleteNotes() exactly as before.
+ */
+async function deleteHiddenItems(notes, pads, parentWin, { all = false } = {}) {
+  if (!pads.length) return deleteNotes(notes, parentWin, { all });
+  notes = notes.filter((n) => store.getNote(n.id));
+  pads = pads.filter((p) => notepadStore.get(p.id));
+  const total = notes.length + pads.length;
+  if (!total) return 0;
+  const one = total === 1;
+  const what = one ? `“${notepadLabel(pads[0])}”` : all ? `all ${total} hidden items` : `${total} items`;
+  const tasks = notes.reduce((sum, n) => sum + n.tasks.length, 0);
+  const drawings = one ? 'Its drawing' : `${pads.length === 1 ? 'A notepad drawing' : `${pads.length} notepad drawings`}`;
+  const lost = tasks ? `${drawings} and ${tasks} task${tasks === 1 ? '' : 's'}` : drawings;
+  const opts = {
+    type: 'warning',
+    buttons: [one ? 'Delete notepad' : `Delete ${total} items`, 'Cancel'],
+    defaultId: 1,
+    cancelId: 1,
+    noLink: true,
+    title: one ? 'Delete notepad' : 'Delete items',
+    message: `Delete ${what}?`,
+    detail: `${lost} will be removed. This can't be undone.`,
+  };
+  let confirmed;
+  if (testHooks.confirm) {
+    confirmed = testHooks.confirm(opts);
+  } else {
+    const target = parentWin && !parentWin.isDestroyed() ? parentWin : undefined;
+    const { response } = target ? await dialog.showMessageBox(target, opts) : await dialog.showMessageBox(opts);
+    confirmed = response === 0;
+  }
+  if (!confirmed) return 0;
+
+  for (const note of notes) {
+    store.deleteNote(note.id);
+    const win = noteWindows.get(note.id);
+    if (win && !win.isDestroyed()) {
+      win.__deleting = true;
+      win.close();
+    }
+  }
+  for (const pad of pads) {
+    const win = notepadWindows.get(pad.id);
+    if (win && !win.isDestroyed()) {
+      win.__deleting = true;
+      win.close();
+    }
+    notepadStore.remove(pad.id).catch((err) => logError('notepad', err));
+  }
+  broadcastHidden();
+  return total;
+}
+
+function notepadFileName() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, '0');
+  return `Notepad ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}${p(d.getMinutes())}.png`;
 }
 
 // ---------------------------------------------------------------- settings ---
@@ -1060,6 +1273,8 @@ function buildAppMenu() {
     { label: 'Collapse all', click: () => setAllCollapsed(true) },
     { label: 'Expand all', click: () => setAllCollapsed(false) },
     { type: 'separator' },
+    { label: 'New notepad', click: () => newNotepad() },
+    { type: 'separator' },
     { label: 'Settings…', click: openSettings },
     { label: 'Open data folder', click: () => shell.showItemInFolder(store.filePath) },
     { label: 'About Scratch', click: openAbout },
@@ -1202,7 +1417,7 @@ function registerIpc() {
     if (senderRoles.get(event.sender.id) !== 'about') return;
     if (about.isAllowedLink(about.REPOSITORY_URL)) shell.openExternal(about.REPOSITORY_URL);
   });
-  ipcMain.handle('app:hidden-count', () => store.data.notes.filter((n) => n.hidden).length);
+  ipcMain.handle('app:hidden-count', () => hiddenCount());
 
   // Manager and timer windows may close themselves; nothing else may.
   ipcMain.on('window:close', (event) => {
@@ -1215,20 +1430,24 @@ function registerIpc() {
   // ---- hidden-notes manager (only that window may use these)
   const fromManager = (event) => senderRoles.get(event.sender.id) === 'manager';
 
-  ipcMain.handle('hidden:list', (event) => (fromManager(event) ? hiddenSummary() : []));
+  ipcMain.handle('hidden:list', (event) => (fromManager(event) ? hiddenItems() : []));
 
   ipcMain.handle('hidden:restore', (event, ids) => {
     if (!fromManager(event)) return 0;
     const notes = hiddenNotesByIds(ids);
     for (const note of notes) reopenNote(note, { focus: false });
-    return notes.length;
+    const pads = hiddenNotepadsByIds(ids);
+    for (const pad of pads) reopenNotepad(pad, { focus: false });
+    return notes.length + pads.length;
   });
 
   ipcMain.handle('hidden:delete', (event, ids) => {
     if (!fromManager(event)) return 0;
     const notes = hiddenNotesByIds(ids);
-    const all = notes.length > 1 && notes.length === store.data.notes.filter((n) => n.hidden).length;
-    return deleteNotes(notes, managerWin, { all });
+    const pads = hiddenNotepadsByIds(ids);
+    const chosen = notes.length + pads.length;
+    const all = chosen > 1 && chosen === hiddenCount();
+    return deleteHiddenItems(notes, pads, managerWin, { all });
   });
 
   // ---- Settings window (only that window may change things)
@@ -1262,6 +1481,96 @@ function registerIpc() {
     const win = BrowserWindow.fromWebContents(event.sender);
     buildAppMenu().popup(win ? { window: win } : undefined);
   });
+
+  // ---- Notepads (each window may only use its own notepad)
+  ipcMain.on('app:new-notepad', () => newNotepad());
+  ipcMain.on('app:open-notepad', () => newNotepad()); // older name for the same thing
+  const notepadFor = (event) => {
+    const id = senderNotepads.get(event.sender.id);
+    const pad = id ? notepadStore.get(id) : null;
+    const win = pad && notepadWindows.get(pad.id);
+    return pad && win && !win.isDestroyed() ? { pad, win } : null;
+  };
+
+  ipcMain.handle('notepad:load', (event) => {
+    const own = notepadFor(event);
+    if (!own) return null;
+    const { id, title, paper, width, height } = own.pad;
+    return { id, title, paper, width, height, image: notepadStore.readImage(id) };
+  });
+
+  ipcMain.handle('notepad:save', async (event, drawing) => {
+    const own = notepadFor(event);
+    if (!own || !drawing || typeof drawing !== 'object') return false;
+    try {
+      return await notepadStore.saveDrawing(own.pad.id, drawing);
+    } catch (err) {
+      logError('notepad', err);
+      return false;
+    }
+  });
+
+  ipcMain.on('notepad:rename', (event, title) => {
+    const own = notepadFor(event);
+    if (!own || !notepadStore.rename(own.pad.id, title)) return;
+    own.win.setTitle(own.pad.title.trim() || 'Notepad');
+  });
+
+  ipcMain.handle('notepad:export', async (event, data) => {
+    const own = notepadFor(event);
+    if (!own) return 'failed';
+    const png = cleanPng(data);
+    if (!png) return 'failed';
+    const name = own.pad.title.replace(/[\\/:*?"<>|]+/g, ' ').trim();
+    const { canceled, filePath } = await dialog.showSaveDialog(own.win, {
+      title: 'Save drawing as picture',
+      defaultPath: path.join(app.getPath('pictures'), name ? `${name}.png` : notepadFileName()),
+      filters: [{ name: 'PNG picture', extensions: ['png'] }],
+    });
+    if (canceled || !filePath) return 'cancelled';
+    try {
+      await fs.promises.writeFile(filePath, png);
+      return 'saved';
+    } catch (err) {
+      logError('notepad', err);
+      return 'failed';
+    }
+  });
+
+  ipcMain.on('notepad:copy', (event, data) => {
+    if (!notepadFor(event)) return;
+    const png = cleanPng(data);
+    if (!png) return;
+    clipboard
+      .write([new ClipboardItem({ 'image/png': new Blob([png], { type: 'image/png' }) })])
+      .catch((err) => logError('notepad', err));
+  });
+
+  ipcMain.handle('notepad:set-fullscreen', (event, flag) => {
+    const own = notepadFor(event);
+    if (!own || typeof flag !== 'boolean') return false;
+    own.win.setFullScreen(flag);
+    return flag;
+  });
+
+  ipcMain.on('notepad:minimize', (event) => {
+    notepadFor(event)?.win.minimize();
+  });
+
+  ipcMain.on('notepad:toggle-maximize', (event) => {
+    const own = notepadFor(event);
+    if (!own || own.win.isFullScreen()) return;
+    if (own.win.isMaximized()) own.win.unmaximize();
+    else own.win.maximize();
+  });
+
+  // The page has saved its drawing: now really close (which hides the notepad).
+  ipcMain.on('notepad:close', (event) => {
+    const own = notepadFor(event);
+    if (!own) return;
+    own.win.__flushed = true;
+    own.win.close();
+  });
 }
 
 // -------------------------------------------------------------- lifecycle ---
@@ -1294,6 +1603,8 @@ function boot() {
   }
   store = new Store(path.join(app.getPath('userData'), 'sticky-notes.json'), { onSaveError });
   store.load();
+  notepadStore = new NotepadStore(app.getPath('userData'), { onError: (err) => logError('notepad', err) });
+  notepadStore.load();
   uiScale = store.data.settings.scale;
   pomodoro.autoFocus = store.data.settings.pomodoroAutoFocus;
   if (!process.env.STICKY_FOCUS_MS && !process.env.STICKY_BREAK_MS) {
@@ -1315,6 +1626,9 @@ function boot() {
   createLauncher();
   for (const note of store.data.notes) {
     if (!note.hidden) createNoteWindow(note);
+  }
+  for (const pad of notepadStore.pads) {
+    if (!pad.hidden) openNotepadWindow(pad, { focus: false });
   }
   if (store.isFirstRun && store.data.notes.length === 0) firstRunNote();
   createTray();
@@ -1352,6 +1666,7 @@ if (!app.requestSingleInstanceLock()) {
 
   app.on('before-quit', markQuitting);
   app.on('will-quit', () => store && store.flush());
+  app.on('will-quit', () => notepadStore && notepadStore.saveIndexSync());
   // Notes can all be hidden while the launcher and tray keep the app alive;
   // only an explicit quit should exit.
   app.on('window-all-closed', () => {

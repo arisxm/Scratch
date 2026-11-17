@@ -5,12 +5,14 @@ import './styles/base.css';
 import './styles/note.css';
 import './styles/launcher.css';
 import './styles/panels.css';
+import './styles/notepad.css';
 import NoteApp from './components/Note.jsx';
 import Launcher from './components/Launcher.jsx';
 import Manager from './components/Manager.jsx';
 import Timer from './components/Timer.jsx';
 import About from './components/About.jsx';
 import Settings from './components/Settings.jsx';
+import Notepad from './components/Notepad.jsx';
 
 const params = new URLSearchParams(window.location.search);
 const view = params.get('view');
@@ -24,6 +26,7 @@ function show() {
   else if (view === 'timer') root.render(<Timer />);
   else if (view === 'about') root.render(<About />);
   else if (view === 'settings') root.render(<Settings />);
+  else if (view === 'notepad') root.render(<Notepad />);
   else root.render(<NoteApp fresh={params.get('fresh') === '1'} />);
 }
 

@@ -32,7 +32,7 @@ Updating from **Sticky Notes** (Scratch's earlier name)? Just run the new instal
 
 ## Using Scratch
 
-- **New note:** click the note pad in the bottom-right corner. Drag the small grip above it to move it.
+- **New note:** click the note pad in the bottom-right corner, or hover over it and choose **Sticky note** or **Notepad**. Drag the small grip above it to move it.
 - **Menu:** the `⋯` button under the pad, right-clicking the pad, or right-clicking the tray icon: collapse all, expand all, Settings, open data folder, About, and quit. The clock and archive buttons next to it open the Pomodoro timer and the hidden notes.
 - **Move a note:** drag its coloured top strip. Notes snap back inside the screen if dropped partly off it.
 - **Resize:** drag the bottom-right corner.
@@ -46,6 +46,7 @@ Updating from **Sticky Notes** (Scratch's earlier name)? Just run the new instal
 - **Collapse:** the chevron shrinks a note to its top strip. **Close (×)** hides it; it is not deleted. Right-click the top strip to delete a note permanently or clear its completed history.
 - **Hidden notes:** the box button under the pad (it shows a count) opens a list of hidden notes. Tick some and restore or delete them together, or use Restore all / Delete all. Deleting always asks first.
 - **Pomodoro:** the clock button under the pad opens a focus timer (25 minutes by default) followed by a break (5 minutes). Pick a preset or type your own lengths in the window; a session already under way finishes at its current length and the new lengths apply from the next one. It keeps counting if you close its window, notifies you when time is up, and counts today's finished sessions.
+- **Notepads:** hover over the note pad and choose **Notepad** (or "New notepad" in the menu) for a paint-style drawing pad on notepad paper (lined, grid, dotted or plain). You can have as many as you like; click the title to rename one. Closing a notepad hides it: it waits under Hidden notes, where you can restore or delete it like a note. Draw with the mouse or a pen with the pen, highlighter, eraser, fill, colour picker, text, line, arrow, rectangle and ellipse tools, in any colour and size. Paste a picture with Ctrl+V (or drop one in, or use the picture button), then drag it or its corners before it's placed. The select tool lifts part of the drawing to move, resize, copy (Ctrl+C), cut (Ctrl+X) or delete it. Undo with Ctrl+Z, redo with Ctrl+Y, full screen with F11 or the full-screen button, and Ctrl+S saves the page as a PNG picture. The drawing is saved automatically.
 - **Settings:** "Settings…" in the menu. Window size (80% to 150%), transparency for all notes, animations on or off, keep on top, rotating headlines, what the + pad creates (daily list or monthly goals), the color of new notes, deadline reminders (and the hour for deadlines with no time), notification sound, opening at sign-in, collapsing notes at launch, Pomodoro lengths, starting the next focus session by itself, Pomodoro alerts, and "Restore default settings".
 
 Notes are saved automatically to `%APPDATA%\Scratch\sticky-notes.json` ("Open data folder" in the menu). Nothing leaves your PC.
