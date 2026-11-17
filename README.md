@@ -28,8 +28,6 @@ The installer is not code-signed yet, so Windows SmartScreen may say "Windows pr
 
 On a **Mac**, get **`Scratch.dmg`** from the same release, open it and drag Scratch into Applications. It runs on Intel and Apple silicon Macs. The app isn't notarized by Apple yet, so the first time you open it macOS says it "could not verify" Scratch: click **Done**, then go to **System Settings › Privacy & Security**, scroll down and click **Open Anyway**.
 
-Updating from **Sticky Notes** (Scratch's earlier name)? Just run the new installer: it replaces Sticky Notes and brings your notes across.
-
 ## Using Scratch
 
 - **New note:** click the note pad in the bottom-right corner, or hover over it and choose **Sticky note** or **Notepad**. Drag the small grip above it to move it.
@@ -52,7 +50,6 @@ Updating from **Sticky Notes** (Scratch's earlier name)? Just run the new instal
 Notes are saved automatically to `%APPDATA%\Scratch\sticky-notes.json` ("Open data folder" in the menu). Nothing leaves your PC.
 
 **About:** "Scratch" in the menu shows the version, the developers and the licence.
-
 
 ## Build from source
 
