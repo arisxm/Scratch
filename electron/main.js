@@ -1273,8 +1273,7 @@ function buildAppMenu() {
     { label: 'Collapse all', click: () => setAllCollapsed(true) },
     { label: 'Expand all', click: () => setAllCollapsed(false) },
     { type: 'separator' },
-    { label: 'New notepad', click: () => newNotepad() },
-    { type: 'separator' },
+    // New notepads are made from the launcher only (hover over the pad, then "Notepad").
     { label: 'Settings…', click: openSettings },
     { label: 'Open data folder', click: () => shell.showItemInFolder(store.filePath) },
     { label: 'About Scratch', click: openAbout },
