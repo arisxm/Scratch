@@ -51,7 +51,7 @@ Updating from **Sticky Notes** (Scratch's earlier name)? Just run the new instal
 
 Notes are saved automatically to `%APPDATA%\Scratch\sticky-notes.json` ("Open data folder" in the menu). Nothing leaves your PC.
 
-**About:** "About Scratch" in the menu shows the version, the developers and the licence.
+**About:** "Scratch" in the menu shows the version, the developers and the licence.
 
 
 ## Build from source
