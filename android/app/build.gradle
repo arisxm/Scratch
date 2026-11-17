@@ -1,0 +1,41 @@
+plugins {
+    id 'com.android.application'
+}
+
+// The Android app's own version (the desktop app's is in ../../package.json).
+// Shown in About Scratch; versionCode must go up with every release.
+def androidVersion = '1.6.0'
+def versionParts = androidVersion.tokenize('.-')*.toInteger()
+
+android {
+    namespace 'com.stickynotes.android'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.stickynotes.android'
+        minSdk 26          // TYPE_APPLICATION_OVERLAY, notification channels
+        targetSdk 35
+        versionCode versionParts[0] * 10000 + versionParts[1] * 100 + versionParts[2] // 1.6.0 -> 10600
+        versionName androidVersion
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    // The web UI (built by `npm run build` in this folder, see README) lives in assets/web.
+    androidResources {
+        noCompress 'woff2', 'png', 'js', 'css', 'html'
+    }
+}

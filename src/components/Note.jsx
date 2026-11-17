@@ -32,11 +32,16 @@ function measureRows(root) {
 }
 
 /**
- * FLIP: when rows are added, removed or moved (between the to-do list and
- * Completed too), each surviving row slides from where it was to where it is
- * now, using transform only (compositor, no layout per frame). `layoutKey`
- * changes whenever the arrangement does. The "before" positions are read while
- * rendering, i.e. before React touches the DOM.
+ * FLIP: when rows are added, removed or moved, each row that stays in its
+ * list slides from where it was to where it is now, using transform only
+ * (compositor, no layout per frame). `layoutKey` changes whenever the
+ * arrangement does. The "before" positions are read while rendering, i.e.
+ * before React touches the DOM.
+ *
+ * A row that moved between the to-do list and Completed is a new element in
+ * the other list. Sliding it there would carry it across the rows in between
+ * (rows have no background, so the texts overlapped); instead it fades in at
+ * its new place once the others have finished sliding.
  */
 function useFlip(rootRef, layoutKey) {
   const seen = useRef(layoutKey);
@@ -52,10 +57,21 @@ function useFlip(rootRef, layoutKey) {
     for (const [id, now] of measureRows(rootRef.current)) {
       const was = before.get(id);
       if (!was) continue;
+      // A slide still running from the last change is replaced, not stacked
+      // (the "before" position above already includes where it had got to).
+      for (const a of now.el.getAnimations()) if (a.id === 'flip' || a.id === 'flip-in') a.cancel();
+      if (was.el !== now.el) {
+        now.el.animate([{ opacity: 0 }, { opacity: 1 }], {
+          id: 'flip-in', duration: 180, delay: FLIP_MS, easing: 'ease-out', fill: 'backwards',
+        });
+        continue;
+      }
       const dx = was.x - now.x;
       const dy = was.y - now.y;
       if (Math.abs(dx) < 1 && Math.abs(dy) < 1) continue;
-      now.el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'translate(0, 0)' }], { duration: FLIP_MS, easing: FLIP_EASE });
+      now.el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'translate(0, 0)' }], {
+        id: 'flip', duration: FLIP_MS, easing: FLIP_EASE,
+      });
     }
   }, [layoutKey, rootRef]);
 }
@@ -84,8 +100,6 @@ function Note({ note, today, fresh, commit, setLocal, updateTasks }) {
   const scrollRef = useRef(null);
   const tasksRef = useRef(note.tasks);
   tasksRef.current = note.tasks;
-  const historyOpenRef = useRef(note.historyOpen);
-  historyOpenRef.current = note.historyOpen;
 
   const isDaily = note.mode === 'daily';
   const isTodayNote = isDaily && note.date === today.date;
@@ -150,9 +164,9 @@ function Note({ note, today, fresh, commit, setLocal, updateTasks }) {
         lingerTimers.current.set(
           id,
           setTimeout(() => {
-            // With Completed open the task flies straight down into it; otherwise it
-            // fades off first.
-            if (historyOpenRef.current || motionOff()) return stopLingering(id);
+            // It fades off first, then reappears in Completed (if open) without
+            // crossing the rows in between (see useFlip).
+            if (motionOff()) return stopLingering(id);
             setLingering((l) => (id in l ? { ...l, [id]: 'leaving' } : l));
             lingerTimers.current.set(id, setTimeout(() => stopLingering(id), EXIT_MS));
             return undefined;

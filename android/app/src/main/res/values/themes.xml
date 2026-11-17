@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Scratch" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:colorAccent">#3550A8</item>
+        <item name="android:colorPrimary">#FBE37C</item>
+        <item name="android:colorPrimaryDark">#FBE37C</item>
+    </style>
+
+    <!-- The start screen: paper yellow, like a note. -->
+    <style name="Theme.Scratch.Start">
+        <item name="android:windowBackground">@color/paper_yellow</item>
+        <item name="android:statusBarColor">@color/paper_yellow</item>
+        <item name="android:navigationBarColor">@color/paper_yellow</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+
+    <style name="Theme.Scratch.Notepad">
+        <item name="android:windowBackground">@color/notepad_paper</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>
